@@ -93,6 +93,7 @@
   .measure b{display:block;font-size:1.5rem;letter-spacing:-.03em}
   .thumb{width:100%;max-width:280px;border:var(--line);display:block;margin-bottom:12px}
   .handset{border:var(--line);background:var(--white);padding:16px;text-align:center}
+  .warnbox{border:var(--line);background:#fff3cd;padding:10px 12px;margin:0 0 14px;font-size:.92rem}
   .dials{border:var(--line);background:#f8f6ef;padding:16px 18px;margin-top:22px}
   .dial{display:block;margin:14px 0 2px;
     font:800 .76rem ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.05em}
@@ -126,16 +127,18 @@
     tiny classifier on <b>your</b> answers and you can feed it a new croissant to
     judge.</p>
     <p class="lede muted">It never learns what a croissant looks like. It only
-    measures two numbers about colour — so whatever you teach it, it believes.</p>
+    measures three numbers about the colour of the crust — so whatever you
+    teach it, it believes.</p>
   </section>
 
   <section class="paper">
     <p class="kicker" style="--accent:var(--undercooked)"><span>Step 1</span> Label all twelve</p>
     <h2>Your turn</h2>
-    <p class="lede">The two numbers under each photo are measured by your browser
+    <p class="lede">The numbers under each photo are measured by your browser
     right now, from the pixels. The <b>labels are yours</b> — click a button on
     every card. There is no right answer being checked; you are defining what the
-    words mean.</p>
+    words mean. The photos are shuffled every time you load the page, so the
+    order gives nothing away.</p>
     <div class="gallery" id="gallery"></div>
     <div class="progress">
       <span class="pcount" id="pcount">0 / 12 labeled</span>
@@ -148,7 +151,7 @@
     <p class="kicker" style="--accent:var(--perfect)"><span>Step 2</span> Train on your labels</p>
     <h2>Find the boundaries</h2>
     <p class="lede">Training here is refreshingly dumb: for each label
-    <i>you</i> used, average those photos' two numbers to get one
+    <i>you</i> used, average those photos' three numbers to get one
     <b>typical croissant</b>. A new photo gets whichever typical croissant it
     lands nearest.</p>
     <div class="controls">
@@ -162,9 +165,11 @@
       </div>
       <div>
         <h3 style="margin-top:0">What the picture shows</h3>
-        <p>Every photo is a dot. Left–right is <b>crust brightness</b>, up–down is
+        <p>Every photo is a dot. Left–right is <b>crust warmth</b>, up–down is
         <b>char</b>. The pale background colours are the classifier's mind: drop a
-        dot anywhere and it takes the colour of that region.</p>
+        dot anywhere and it takes the colour of that region. Brightness is a third
+        number the chart cannot show, so the map is a slice cut at one brightness
+        — see the caption on the chart.</p>
         <p class="muted" style="font-size:.93rem">These boundaries came from your
         labels. Label the twelve differently and you get a different machine from
         the same twelve photos.</p>
@@ -202,10 +207,12 @@
         <p class="muted" style="margin:0;font-size:.92rem">Drag a dial across a
         boundary and watch the verdict flip. Park it on the line to see the
         confidence collapse.</p>
-        <label class="dial" for="sl-b">Crust brightness <output id="out-b">–</output></label>
+        <label class="dial" for="sl-b">Crust warmth <output id="out-b">–</output></label>
         <input type="range" id="sl-b" step="1">
         <label class="dial" for="sl-c">Char <output id="out-c">–</output></label>
         <input type="range" id="sl-c" step="0.5">
+        <label class="dial" for="sl-l">Crust brightness <output id="out-l">–</output></label>
+        <input type="range" id="sl-l" step="1">
       </div>
     </div>
   </section>
@@ -214,16 +221,30 @@
     <summary>How does it actually decide? (plain language)</summary>
     <div class="body">
       <p><b>1. Measure.</b> Each photo is shrunk to a small grid, and the middle
-      of it — where the croissant sits — is scanned pixel by pixel. Two numbers
-      come out: the <i>average brightness</i> of those pixels, and the
-      <i>percentage</i> that are very dark, which we call char.</p>
+      of it — where the croissant sits — is scanned pixel by pixel. Pixels that
+      are bright and colourless are treated as backdrop and skipped, so a cut-out
+      photo on a white studio background is not mistaken for a pale croissant.
+      Two numbers come out of what is left:</p>
+      <ul>
+        <li><b>Warmth</b> — how much redder than bluer the crust is. Raw dough is
+        nearly neutral; a golden croissant is strongly red-over-blue. Turning the
+        lights up scales red and blue together, so this number barely moves
+        between a dim bakery and a bright studio.</li>
+        <li><b>Char</b> — the share of pixels dark enough to read as burnt.</li>
+        <li><b>Brightness</b> — the plain average lightness. This one is useful
+        but least trustworthy, because it also records how bright the room was,
+        so it is given half the say of the other two.</li>
+      </ul>
+      <p>The chart can only draw two of the three, so it shows a flat slice
+      through the third. The caption on the chart tells you which brightness the
+      slice was cut at — move the brightness dial and the whole map shifts.</p>
       <p><b>2. Learn.</b> You label the twelve. For each label you used, the page
-      averages those photos' two numbers into one "typical" point.</p>
+      averages those photos' three numbers into one "typical" point.</p>
       <p><b>3. Decide.</b> A new photo is measured the same way, and it gets
       whichever typical point is nearest. The confidence bars are just how much
       nearer the winner was.</p>
       <p><b>What it is not doing:</b> it never learns what a croissant looks
-      like. Shape, layers, and crumb are invisible to it. Two numbers, your
+      like. Shape, layers, and crumb are invisible to it. Three numbers, your
       twelve examples, nearest match. That is all.</p>
     </div>
   </details>
@@ -235,11 +256,12 @@
         <li><b>Teach it something wrong.</b> Label the twelve backwards — call the
         pale ones burnt and the dark ones undercooked. Train again. It will
         cheerfully agree with you, because it has no idea what the words mean.</li>
-        <li><b>A close call.</b> Use the dials. Slide crust brightness slowly and
+        <li><b>A close call.</b> Use the dials. Slide crust warmth slowly and
         watch the verdict flip. Stop right on the flip: the top two scores should
         be nearly equal, which is the classifier admitting it is guessing.</li>
         <li><b>A strange one.</b> Upload something that is not a croissant — a dark
-        jacket, a bright wall, your desk. It will still answer confidently.</li>
+        jacket, a bright wall, your desk. It still answers, but if the numbers land
+        far outside your twelve photos it now warns you not to trust the answer.</li>
       </ol>
     </div>
   </details>
@@ -268,6 +290,14 @@ const QUIP   = {
 const mcan = document.createElement("canvas");
 const mctx = mcan.getContext("2d", {willReadFrequently:true});
 
+// Two numbers per photo:
+//   warmth = how much redder than bluer the crust is (R/B). A pale croissant is
+//            nearly neutral; a golden one is strongly red-over-blue. Crucially
+//            this barely moves when the lighting gets brighter or dimmer, because
+//            turning the lights up scales R and B together.
+//   char   = the share of pixels dark enough to read as burnt.
+// Bright, colourless pixels are treated as backdrop (studio white, blown-out
+// windows) and skipped, so a cut-out product shot is not measured as "pale".
 function measure(img){
   const W = 160, H = 120;
   mcan.width = W; mcan.height = H;
@@ -275,16 +305,29 @@ function measure(img){
   const d = mctx.getImageData(0, 0, W, H).data;
   const x0 = Math.round(W*0.18), x1 = Math.round(W*0.82);
   const y0 = Math.round(H*0.15), y1 = Math.round(H*0.90);
-  let sum = 0, dark = 0, n = 0;
-  for (let y = y0; y < y1; y++){
-    for (let x = x0; x < x1; x++){
-      const i = (y*W + x)*4;
-      const L = 0.2126*d[i] + 0.7152*d[i+1] + 0.0722*d[i+2];
-      sum += L; n++;
-      if (L < 45) dark++;
+
+  const scan = (skipBackdrop) => {
+    let warm = 0, dark = 0, lum = 0, n = 0;
+    for (let y = y0; y < y1; y++){
+      for (let x = x0; x < x1; x++){
+        const i = (y*W + x)*4;
+        const R = d[i], G = d[i+1], B = d[i+2];
+        const L = 0.2126*R + 0.7152*G + 0.0722*B;
+        const sat = Math.max(R,G,B) - Math.min(R,G,B);
+        if (skipBackdrop && L > 215 && sat < 30) continue;
+        warm += Math.min(R/(B + 1), 6);
+        lum  += L;
+        if (L < 45) dark++;
+        n++;
+      }
     }
-  }
-  return { brightness: sum/n, char: 100*dark/n };
+    return {n, warmth: warm/n, char: 100*dark/n, brightness: lum/n};
+  };
+
+  const total = (x1-x0)*(y1-y0);
+  let r = scan(true);
+  if (r.n < 0.05*total) r = scan(false);   // photo really is almost all backdrop
+  return {warmth: r.warmth, char: r.char, brightness: r.brightness};
 }
 
 const loadImage = src => new Promise((res, rej) => {
@@ -302,11 +345,22 @@ let lastTest   = null;
 let heldQuip   = null;
 
 /* ---------- step 1: the visitor labels the twelve ---------- */
+// Fisher-Yates. The photos ship grouped by label; showing them in that order
+// would hand the visitor the answer, so they are shuffled on every visit.
+function shuffled(arr){
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 async function buildGallery(){
   const g = document.getElementById("gallery");
   g.innerHTML = "";
   measured = [];
-  for (const s of SAMPLES){
+  for (const s of shuffled(SAMPLES)){
     const img = await loadImage(s.src);
     const m = measure(img);
     measured.push({...s, ...m});
@@ -316,7 +370,8 @@ async function buildGallery(){
     card.id = "card-" + s.name;
     card.innerHTML =
       `<img src="${s.src}" alt="A croissant, waiting for you to label it">` +
-      `<div class="nums">bright ${m.brightness.toFixed(0)} · char ${m.char.toFixed(1)}%</div>` +
+      `<div class="nums">warmth ${m.warmth.toFixed(2)} · char ${m.char.toFixed(1)}%` +
+      ` · bright ${m.brightness.toFixed(0)}</div>` +
       `<div class="pick">` +
         LABELS.map(l => `<button type="button" class="${l}" data-label="${l}"
            aria-pressed="false">${SHORT[l]}</button>`).join("") +
@@ -354,26 +409,48 @@ function updateProgress(){
 }
 
 /* ---------- step 2: training ---------- */
-const norm = (p, r) => [ (p.brightness - r.bMin)/(r.bMax - r.bMin),
-                         (p.char       - r.cMin)/(r.cMax - r.cMin) ];
+// All three numbers get an equal vote. Brightness separates the labels well
+// within these twelve photos but partly records how bright the room was, so it
+// must not dominate: pushing its weight to 2 makes the classifier call a
+// brightly-lit golden croissant "undercooked" again. Anything from 0.6 to 1.5
+// scores 12/12 on leave-one-out, and 1 sits in the middle of that range.
+const W_BRIGHT = 1.0;
+
+const norm = (p, r) => [ (p.warmth     - r.bMin)/(r.bMax - r.bMin),
+                         (p.char       - r.cMin)/(r.cMax - r.cMin),
+                         (p.brightness - r.lMin)/(r.lMax - r.lMin) * W_BRIGHT ];
+
+const dist = (a, b) => Math.hypot(a[0]-b[0], a[1]-b[1], a[2]-b[2]);
 
 function train(){
-  const bs = measured.map(p => p.brightness), cs = measured.map(p => p.char);
   const pad = 0.12;
-  const bLo = Math.min(...bs), bHi = Math.max(...bs);
-  const cLo = Math.min(...cs), cHi = Math.max(...cs);
-  const range = { bMin: bLo - (bHi-bLo)*pad, bMax: bHi + (bHi-bLo)*pad,
-                  cMin: cLo - (cHi-cLo)*pad, cMax: cHi + (cHi-cLo)*pad };
+  const span = (vals) => {
+    const lo = Math.min(...vals), hi = Math.max(...vals), d = (hi-lo) || 1;
+    return [lo - d*pad, hi + d*pad];
+  };
+  const [bMin,bMax] = span(measured.map(p => p.warmth));
+  const [cMin,cMax] = span(measured.map(p => p.char));
+  const [lMin,lMax] = span(measured.map(p => p.brightness));
+  const range = {bMin, bMax, cMin, cMax, lMin, lMax};
 
   const used = LABELS.filter(l => measured.some(p => userLabels[p.name] === l));
   const centroids = used.map(lab => {
     const grp = measured.filter(p => userLabels[p.name] === lab);
-    return { label: lab,
-             brightness: grp.reduce((a,p) => a + p.brightness, 0)/grp.length,
-             char:       grp.reduce((a,p) => a + p.char, 0)/grp.length,
-             n: grp.length };
+    const avg = k => grp.reduce((a,p) => a + p[k], 0)/grp.length;
+    return { label: lab, warmth: avg("warmth"), char: avg("char"),
+             brightness: avg("brightness"), n: grp.length };
   });
   trained = {centroids, range, used};
+
+  // how far a photo normally sits from its own group's centre. Anything much
+  // further away than this is unlike the training photos, and we say so.
+  trained.spread = Math.max(...measured.map(p => {
+    const c = centroids.find(c => c.label === userLabels[p.name]);
+    return dist(norm(p, range), norm(c, range));
+  }));
+  // the chart is a flat slice through a three-number space; by default we cut
+  // it at the average brightness of the twelve photos
+  trained.meanBright = measured.reduce((a,p) => a + p.brightness, 0)/measured.length;
 
   document.getElementById("train-out").style.display = "";
   document.getElementById("legend").innerHTML = used.map(l =>
@@ -382,8 +459,8 @@ function train(){
     "<p style='margin:14px 0 6px'><b>The typical croissants you taught it:</b></p>" +
     centroids.map(c =>
       `<div><span class="swatch" style="background:${COLOR[c.label]}"></span>` +
-      `${NICE[c.label]} (${c.n} photo${c.n>1?"s":""}): brightness ` +
-      `${c.brightness.toFixed(0)}, char ${c.char.toFixed(1)}%</div>`).join("");
+      `${NICE[c.label]} (${c.n} photo${c.n>1?"s":""}): warmth ` +
+      `${c.warmth.toFixed(2)}, char ${c.char.toFixed(1)}%</div>`).join("");
 
   showAgreement();
   drawPlot();
@@ -409,14 +486,15 @@ function showAgreement(){
 
 function classify(m){
   const r = trained.range;
-  const [x, y] = norm(m, r);
-  const ds = trained.centroids.map(c => {
-    const [cx, cy] = norm(c, r);
-    return {label: c.label, d: Math.hypot(x-cx, y-cy)};
-  }).sort((a,b) => a.d - b.d);
+  const v = norm(m, r);
+  const ds = trained.centroids.map(c =>
+    ({label: c.label, d: dist(v, norm(c, r))})).sort((a,b) => a.d - b.d);
   const inv = ds.map(o => 1/Math.max(o.d, 1e-6));
   const tot = inv.reduce((a,b) => a+b, 0);
-  return { best: ds[0].label, scores: ds.map((o,i) => ({label:o.label, share: inv[i]/tot})) };
+  return { best: ds[0].label,
+           scores: ds.map((o,i) => ({label:o.label, share: inv[i]/tot})),
+           // sits far outside the cloud of training photos
+           outlier: ds[0].d > trained.spread * 2.2 };
 }
 
 /* ---------- the chart ---------- */
@@ -424,6 +502,9 @@ function drawPlot(){
   const cv = document.getElementById("plot"), ctx = cv.getContext("2d");
   const W = cv.width, H = cv.height, P = 52;
   const r = trained.range;
+  // the classifier uses three numbers; the chart can only show two, so it draws
+  // a cross-section at one brightness — the tested photo's, or the average
+  const slice = lastTest ? lastTest.brightness : trained.meanBright;
   const px = b => P + (b - r.bMin)/(r.bMax - r.bMin) * (W - P*1.4);
   const py = c => H - P - (c - r.cMin)/(r.cMax - r.cMin) * (H - P*2.2);
 
@@ -433,37 +514,49 @@ function drawPlot(){
     for (let y = H - P; y > P*1.2; y -= step){
       const b = r.bMin + (x - P)/(W - P*1.4)*(r.bMax - r.bMin);
       const c = r.cMin + (H - P - y)/(H - P*2.2)*(r.cMax - r.cMin);
-      ctx.fillStyle = COLOR[classify({brightness:b, char:c}).best] + "44";
+      ctx.fillStyle = COLOR[classify({warmth:b, char:c, brightness:slice}).best] + "44";
       ctx.fillRect(x, y - step, step, step);
     }
   }
   ctx.strokeStyle = "#101114"; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(P, P*1.2); ctx.lineTo(P, H-P); ctx.lineTo(W-P*0.4, H-P); ctx.stroke();
   ctx.fillStyle = "#101114"; ctx.font = "700 13px ui-monospace,Menlo,monospace";
-  ctx.fillText("crust brightness →", P, H - P + 26);
+  ctx.fillText("crust warmth (red vs blue) →", P, H - P + 26);
+  ctx.fillStyle = "#676760"; ctx.font = "600 12px ui-monospace,Menlo,monospace";
+  ctx.fillText("map drawn at brightness " + slice.toFixed(0)
+               + (lastTest ? " (your photo's)" : " (average)"), P, P*0.75);
+  ctx.fillStyle = "#101114"; ctx.font = "700 13px ui-monospace,Menlo,monospace";
   ctx.save(); ctx.translate(P - 30, H - P); ctx.rotate(-Math.PI/2);
   ctx.fillText("char % →", 0, 0); ctx.restore();
 
   for (const p of measured){
     const lab = userLabels[p.name];
     if (!lab) continue;
-    ctx.beginPath(); ctx.arc(px(p.brightness), py(p.char), 7, 0, 7);
+    ctx.beginPath(); ctx.arc(px(p.warmth), py(p.char), 7, 0, 7);
     ctx.fillStyle = COLOR[lab]; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = "#101114"; ctx.stroke();
   }
   for (const c of trained.centroids){
-    const x = px(c.brightness), y = py(c.char);
+    const x = px(c.warmth), y = py(c.char);
     ctx.beginPath();
     ctx.moveTo(x-9,y); ctx.lineTo(x+9,y); ctx.moveTo(x,y-9); ctx.lineTo(x,y+9);
     ctx.lineWidth = 4; ctx.strokeStyle = "#101114"; ctx.stroke();
   }
   if (lastTest){
-    const x = px(lastTest.brightness), y = py(lastTest.char);
+    // a photo unlike the training set can land off the chart: pin it to the
+    // edge rather than drawing it somewhere invisible
+    const rawX = px(lastTest.warmth), rawY = py(lastTest.char);
+    const x = Math.min(Math.max(rawX, P + 4), W - P*0.4 - 4);
+    const y = Math.min(Math.max(rawY, P*1.2 + 4), H - P - 4);
+    const off = (x !== rawX) || (y !== rawY);
     ctx.beginPath(); ctx.arc(x, y, 12, 0, 7);
     ctx.fillStyle = "#fff"; ctx.fill();
-    ctx.lineWidth = 4; ctx.strokeStyle = "#4f74ff"; ctx.stroke();
+    ctx.lineWidth = 4; ctx.strokeStyle = "#4f74ff";
+    if (off) ctx.setLineDash([5,4]);
+    ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = "#4f74ff"; ctx.font = "800 13px ui-monospace,Menlo,monospace";
-    ctx.fillText("your croissant", Math.min(x + 17, W - 150), y + 5);
+    ctx.fillText(off ? "yours (off the chart)" : "your croissant",
+                 Math.min(x + 17, W - 190), y + 5);
   }
 }
 
@@ -474,7 +567,7 @@ function unlockTesting(){
 }
 
 function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
-  const {best, scores} = classify(m);
+  const {best, scores, outlier} = classify(m);
   lastTest = m;
   drawPlot();
 
@@ -484,20 +577,17 @@ function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
   }
   const ordered = trained.used.map(l => scores.find(s => s.label === l));
 
+  const nums = `<div>warmth<b>${m.warmth.toFixed(2)}</b></div>
+                <div>char<b>${m.char.toFixed(1)}%</b></div>
+                <div>brightness<b>${m.brightness.toFixed(0)}</b></div>`;
   const left = src
     ? `<img class="thumb" src="${src}" alt="The croissant being judged">
-       <div class="measure">
-         <div>brightness<b>${m.brightness.toFixed(0)}</b></div>
-         <div>char<b>${m.char.toFixed(1)}%</b></div>
-       </div>`
+       <div class="measure">${nums}</div>`
     : `<div class="handset">
          <p class="kicker" style="margin:0 0 10px"><span>No photo</span></p>
          <p class="muted" style="margin:0 0 12px;font-size:.9rem">You set these two
          numbers by hand. This is the imaginary croissant they describe.</p>
-         <div class="measure" style="justify-content:center">
-           <div>brightness<b>${m.brightness.toFixed(0)}</b></div>
-           <div>char<b>${m.char.toFixed(1)}%</b></div>
-         </div>
+         <div class="measure" style="justify-content:center">${nums}</div>
        </div>`;
 
   document.getElementById("result").innerHTML = `
@@ -508,6 +598,10 @@ function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
           <p class="kicker" style="--accent:${COLOR[best]}"><span>Verdict</span></p>
           <div class="verdict">${NICE[best]}</div>
           <p class="quip">${heldQuip.text}</p>
+          ${outlier ? `<p class="warnbox">⚠️ <b>But do not trust this one.</b>
+            These numbers sit well outside every photo you labeled, so the
+            classifier is extrapolating into territory it has never seen. Look at
+            how close the three scores are below — that near-tie is it shrugging.</p>` : ""}
           ${ordered.map(s => `
             <div class="scorerow"><span>${NICE[s.label]}</span><span>${(s.share*100).toFixed(0)}%</span></div>
             <div class="bar"><i style="width:${(s.share*100).toFixed(0)}%;background:${COLOR[s.label]}"></i></div>
@@ -517,7 +611,7 @@ function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
                ? "The classifier you trained agrees with you."
                : "Your own classifier disagrees with you — worth a look."}</p>` : ""}
           <p class="muted" style="font-size:.9rem">It chose <b>${NICE[best]}</b> because
-          those two numbers land nearest the typical ${NICE[best].toLowerCase()}
+          those numbers land nearest the typical ${NICE[best].toLowerCase()}
           croissant <i>you</i> defined. See the blue ring on the chart above.</p>
         </div>
       </div>
@@ -534,38 +628,46 @@ async function runTest(src, mine){
 }
 
 /* ---------- the dials ---------- */
-const slB = document.getElementById("sl-b"), slC = document.getElementById("sl-c");
-const outB = document.getElementById("out-b"), outC = document.getElementById("out-c");
+const slB = document.getElementById("sl-b"), slC = document.getElementById("sl-c"),
+      slL = document.getElementById("sl-l");
+const outB = document.getElementById("out-b"), outC = document.getElementById("out-c"),
+      outL = document.getElementById("out-l");
 
 function setupDials(){
   const r = trained.range;
-  slB.min = Math.floor(r.bMin); slB.max = Math.ceil(r.bMax);
+  slB.min = r.bMin.toFixed(2); slB.max = r.bMax.toFixed(2); slB.step = 0.01;
   slC.min = Math.max(0, Math.floor(r.cMin)); slC.max = Math.ceil(r.cMax);
+  slL.min = Math.floor(r.lMin); slL.max = Math.ceil(r.lMax);
   if (slB.value === "" || +slB.value < +slB.min || +slB.value > +slB.max){
-    slB.value = Math.round((+slB.min + +slB.max)/2);
+    slB.value = ((+slB.min + +slB.max)/2).toFixed(2);
     slC.value = Math.round((+slC.min + +slC.max)/2);
+    slL.value = Math.round(trained.meanBright);
   }
-  outB.textContent = slB.value;
+  paintDials();
+}
+
+function paintDials(){
+  outB.textContent = (+slB.value).toFixed(2);
   outC.textContent = (+slC.value).toFixed(1) + "%";
+  outL.textContent = Math.round(+slL.value);
 }
 
 function readDials(){
-  const m = {brightness: +slB.value, char: +slC.value};
-  outB.textContent = m.brightness;
-  outC.textContent = m.char.toFixed(1) + "%";
+  const m = {warmth: +slB.value, char: +slC.value, brightness: +slL.value};
+  paintDials();
   showResult(m, {keepQuip:true});
 }
 
 function syncDialsTo(m){
   if (!trained) return;
-  slB.value = Math.min(Math.max(m.brightness, +slB.min), +slB.max);
-  slC.value = Math.min(Math.max(m.char, +slC.min), +slC.max);
-  outB.textContent = Math.round(m.brightness);
-  outC.textContent = m.char.toFixed(1) + "%";
+  const clamp = (v, el) => Math.min(Math.max(v, +el.min), +el.max);
+  slB.value = clamp(m.warmth, slB);
+  slC.value = clamp(m.char, slC);
+  slL.value = clamp(m.brightness, slL);
+  paintDials();
 }
 
-slB.addEventListener("input", readDials);
-slC.addEventListener("input", readDials);
+[slB, slC, slL].forEach(el => el.addEventListener("input", readDials));
 
 /* ---------- wiring ---------- */
 document.getElementById("btn-train").addEventListener("click", () => {
