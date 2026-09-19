@@ -23,31 +23,35 @@ Avoid VS Code's **Open Preview** for this file — its internal
 
 ## My classifier
 
-**Croissant Check** — a tiny classifier that guesses how a batch of croissants
-turned out from three baking numbers.
+**Croissant Check** — a tiny classifier that guesses whether a batch of
+croissants came out underbaked, perfect, or overbaked.
 
 ### The idea (Stop 3)
 
-1. **My page will classify** a batch of home-baked croissants by how they turned
-   out, using three numbers from the recipe and the oven.
-2. **The possible labels are** Just right, Too dry, Too fluffy, and
-   Not crusty enough.
-3. **The classifier will look at** three inputs:
-   - **Butter** — grams of butter per 100 g of flour (10–60)
-   - **Proofing time** — minutes rising at room temperature (30–180)
-   - **Bake time** — minutes in a 200 °C oven (8–26)
-4. **One example it can learn from is** butter 50, proofing 120 minutes, bake
-   18 minutes, which I label *Just right*. Drop the butter to 15 and keep
-   everything else the same, and I label that one *Too dry*.
+1. **My page will classify** a batch of home-baked croissants by how well they
+   were baked.
+2. **The possible labels are** Underbaked, Perfect, and Overbaked.
+3. **The classifier will look at** two inputs:
+   - **Oven temperature** — degrees Celsius (160–240)
+   - **Bake time** — minutes in the oven (8–30)
+4. **One example it can learn from is** 200 °C for 18 minutes, which I label
+   *Perfect*. Same oven, but pulled out at 10 minutes, and I label that one
+   *Underbaked*.
 5. **A visitor should understand that** the page has never tasted a croissant.
    It only learned the boundaries between labels from the handful of examples I
    labeled myself, so the regions it draws reflect my opinions about baking, not
    a rule of pastry. Batches near a boundary are close calls, and the page is
    least trustworthy there.
 
-Each label comes from one variable drifting out of range: too little butter
-makes it dry, too long proofing makes it bready and fluffy instead of layered,
-and too short a bake leaves it pale and soft rather than crusty.
+The two inputs trade off against each other, because what actually matters is
+roughly how much total heat the dough receives. A hot oven for a short time and
+a cooler oven for a longer time can both land on *Perfect*, so the perfect
+region should come out as a diagonal band rather than a simple cut-off — with
+Underbaked below it and Overbaked above it.
+
+The labels are also in order, which makes mistakes easy to talk about: calling
+an Underbaked batch *Perfect* is a near miss, while calling it *Overbaked* is a
+real failure.
 
 - **How it makes a prediction (in plain language):** _to fill in after building_
 - **One limitation I found:** _to fill in after testing_
