@@ -23,35 +23,48 @@ Avoid VS Code's **Open Preview** for this file — its internal
 
 ## My classifier
 
-**Croissant Check** — a tiny classifier that guesses whether a batch of
-croissants came out underbaked, perfect, or overbaked.
+**Croissant Check** — a tiny classifier that looks at a photo of a croissant
+and guesses whether it came out undercooked, perfect, or burnt.
 
 ### The idea (Stop 3)
 
-1. **My page will classify** a batch of home-baked croissants by how well they
-   were baked.
-2. **The possible labels are** Underbaked, Perfect, and Overbaked.
-3. **The classifier will look at** two inputs:
-   - **Oven temperature** — degrees Celsius (160–240)
-   - **Bake time** — minutes in the oven (8–30)
-4. **One example it can learn from is** 200 °C for 18 minutes, which I label
-   *Perfect*. Same oven, but pulled out at 10 minutes, and I label that one
-   *Underbaked*.
-5. **A visitor should understand that** the page has never tasted a croissant.
-   It only learned the boundaries between labels from the handful of examples I
-   labeled myself, so the regions it draws reflect my opinions about baking, not
-   a rule of pastry. Batches near a boundary are close calls, and the page is
-   least trustworthy there.
+1. **My page will classify** photographs of croissants by how well they were
+   baked.
+2. **The possible labels are** Undercooked, Perfect, and Burnt.
+3. **The classifier will look at** two numbers measured from the photo itself:
+   - **Crust brightness** — how light or dark the croissant is on average
+   - **Char** — the percentage of pixels dark enough to count as burnt
+4. **One example it can learn from is** `perfect-2.jpg`, which has brightness
+   111 and 9% char, and which I label *Perfect*. Compare `undercooked-3.jpg` at
+   brightness 159 with almost no char (1.7%), which I label *Undercooked*.
+5. **A visitor should understand that** the page is not recognising a croissant.
+   It only measures two colour numbers and compares them to the twelve examples
+   I labeled, so a dark photo of almost anything would come back *Burnt*. The
+   boundaries reflect my opinions about baking, not a rule of pastry, and photos
+   near a boundary are close calls where the page is least trustworthy.
 
-The two inputs trade off against each other, because what actually matters is
-roughly how much total heat the dough receives. A hot oven for a short time and
-a cooler oven for a longer time can both land on *Perfect*, so the perfect
-region should come out as a diagonal band rather than a simple cut-off — with
-Underbaked below it and Overbaked above it.
+This is the same shape as One Pixel ML — twelve labeled examples, and a
+brightness number — just with a real photo instead of a single pixel, a second
+measurement alongside brightness, and three labels instead of two.
 
-The labels are also in order, which makes mistakes easy to talk about: calling
-an Underbaked batch *Perfect* is a near miss, while calling it *Overbaked* is a
+The labels are in order, which makes mistakes easy to talk about: calling an
+Undercooked croissant *Perfect* is a near miss, while calling it *Burnt* is a
 real failure.
+
+### The twelve examples
+
+Four photos per label, in [`images/dataset/`](images/dataset/), split out of the
+three grids I generated. Measured values:
+
+| Label | Crust brightness | Char |
+| --- | --- | --- |
+| Undercooked | 127 – 159 | 1.7% – 6.2% |
+| Perfect | 100 – 111 | 9.2% – 13.2% |
+| Burnt | 64 – 84 | 36.2% – 50.3% |
+
+The three groups do not overlap on either measurement, so even a simple
+boundary should separate them. Brightness alone nearly does the whole job; char
+is what makes *Burnt* unmistakable.
 
 - **How it makes a prediction (in plain language):** _to fill in after building_
 - **One limitation I found:** _to fill in after testing_

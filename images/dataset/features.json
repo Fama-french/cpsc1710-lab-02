@@ -1,0 +1,86 @@
+[
+  {
+    "file": "undercooked-1.jpg",
+    "label": "undercooked",
+    "brightness": 126.9,
+    "char": 6.2,
+    "kb": 56
+  },
+  {
+    "file": "undercooked-2.jpg",
+    "label": "undercooked",
+    "brightness": 139.6,
+    "char": 5.4,
+    "kb": 51
+  },
+  {
+    "file": "undercooked-3.jpg",
+    "label": "undercooked",
+    "brightness": 159.0,
+    "char": 1.7,
+    "kb": 43
+  },
+  {
+    "file": "undercooked-4.jpg",
+    "label": "undercooked",
+    "brightness": 139.7,
+    "char": 5.6,
+    "kb": 50
+  },
+  {
+    "file": "perfect-1.jpg",
+    "label": "perfect",
+    "brightness": 100.0,
+    "char": 12.3,
+    "kb": 62
+  },
+  {
+    "file": "perfect-2.jpg",
+    "label": "perfect",
+    "brightness": 111.3,
+    "char": 9.2,
+    "kb": 57
+  },
+  {
+    "file": "perfect-3.jpg",
+    "label": "perfect",
+    "brightness": 103.7,
+    "char": 13.2,
+    "kb": 67
+  },
+  {
+    "file": "perfect-4.jpg",
+    "label": "perfect",
+    "brightness": 104.5,
+    "char": 9.6,
+    "kb": 65
+  },
+  {
+    "file": "burnt-1.jpg",
+    "label": "burnt",
+    "brightness": 79.5,
+    "char": 36.2,
+    "kb": 67
+  },
+  {
+    "file": "burnt-2.jpg",
+    "label": "burnt",
+    "brightness": 64.1,
+    "char": 50.3,
+    "kb": 70
+  },
+  {
+    "file": "burnt-3.jpg",
+    "label": "burnt",
+    "brightness": 83.8,
+    "char": 37.0,
+    "kb": 70
+  },
+  {
+    "file": "burnt-4.jpg",
+    "label": "burnt",
+    "brightness": 72.3,
+    "char": 44.7,
+    "kb": 69
+  }
+]
