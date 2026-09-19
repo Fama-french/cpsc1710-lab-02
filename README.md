@@ -167,6 +167,12 @@ about baking. Two ways to see this:
   one **Undercooked**. Shape, layers, and crumb are invisible to it — it only
   ever sees two numbers about colour.
 
+- **Anything golden-brown reads as a croissant.** A photo of a face is judged
+  *Undercooked* at 69% confidence with no warning at all, because skin measures
+  warmth 1.84, char 0%, brightness 152 — all inside the range of the twelve.
+  Cardboard, tan walls and wooden tables do the same. This is the limitation I
+  cannot threshold away: the page sees three colour statistics, so anything that
+  shares them is a croissant to it.
 - **All twelve photos are the same kind of photo.** They are dim indoor bakery
   scenes from one image generator. The first real croissant photo I tried from
   the web — a brightly-lit product shot on a white studio background — was called
@@ -225,20 +231,39 @@ statistics, so anything that shares them is, to this classifier, a croissant.
 
 ### Showing it to a classmate
 
-_Still to do — this part is mine, not the AI's._ Show the page without
-explaining it, then record their answers:
+I sent a classmate the link with no explanation.
 
-- What do you think you can change?
-- What do you think the classifier is doing?
-- What is confusing?
-
-| Question | What they said |
+| Question | What he said |
 | --- | --- |
-| What can you change? | |
-| What is it doing? | |
-| What is confusing? | |
+| What can you change? | _to fill in_ |
+| What is it doing? | _to fill in_ |
+| What is confusing? | The classification was hard — meaning deciding which label to give each of the twelve photos, especially the middle ones |
 
-**The improvement I made after their feedback:**
+He also uploaded a photo of himself, and the page told him he was a
+**perfect croissant**.
+
+**What I took from it.** I had assumed labelling the twelve was the easy warm-up
+and the prediction was the interesting part. He found the opposite: choosing
+between *undercooked* and *perfect* for a borderline photo is genuinely hard, and
+the page gave him no help and no reassurance that hesitating was normal.
+
+The selfie was not just funny. I measured it afterwards: a mid skin tone comes
+out at **warmth 1.84, char 0%, brightness 152** — every one of those inside the
+range of my twelve croissants, so no warning fires and it reports *Undercooked*
+at 69% confidence. Deeper skin tones measure warmth 3.81 and land on *Perfect*.
+Croissant crust and human skin are both golden-brown. My out-of-range warning
+can only catch photos whose **numbers** are unusual, not photos that are unusual
+for reasons three colour statistics cannot see.
+
+**The improvements I made after his feedback:**
+
+1. **A labelling guide** above the twelve photos, describing what each label
+   looks like, and saying plainly that several photos sit between two labels and
+   that disagreeing about them is the task rather than a mistake.
+2. **The page now owns the selfie result.** The upload box warns that it will
+   judge anything and sound certain, using his selfie as the example, and there
+   is a fourth experiment inviting visitors to try a face or anything tan —
+   cardboard, a wooden table, a paper bag — to see the warning fail to fire.
 
 ## Development log
 
@@ -273,7 +298,14 @@ Moments where I directed the work, in order:
    that I had not thought about. A grey rectangle was confidently called a
    croissant, and a verdict sitting exactly on a boundary was displayed just as
    loudly as a confident one. Both are now flagged in the page itself.
-8. _(add your own here as you keep working)_
+8. A classmate tried the page cold. He said the hard part was labelling the
+   twelve photos, not understanding the prediction — the opposite of what I
+   expected — and he uploaded a selfie and was told he was a perfect croissant.
+   I added a labelling guide for the first problem, and for the second I put the
+   finding into the page itself rather than hiding it, since a classifier that
+   confidently judges a face is the clearest evidence of what it is actually
+   doing.
+9. _(add your own here as you keep working)_
 
 ## Reflection
 
