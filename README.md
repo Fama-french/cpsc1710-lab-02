@@ -32,11 +32,14 @@ not behave like normal browser addresses. Open the file in a real browser.
    browser just measured from each photo.
 2. **Press "Train the classifier"** in Step 2. A chart appears showing every
    photo as a dot and the three coloured regions the classifier decided on.
-3. **Test it** in Step 3, three ways:
+3. **Test it** in Step 3, four ways:
    - Press **"Test this one"** under any of the twelve photos.
    - Press **🎲 Surprise me** for a random one.
    - Press **"Use my own photo"** and pick any image file on your computer.
-4. Watch the **blue ring** appear on the chart — that is where your photo landed.
+   - **Drag the two dials** to set crust brightness and char by hand, with no
+     photo at all. The verdict updates live as you drag.
+4. Watch the **blue ring** on the chart — that is where your photo or your dial
+   setting landed.
 5. **"Clear"** removes the result; **"Start over"** resets the whole page.
 
 Three experiments worth running, which the page also lists at the bottom:
@@ -44,7 +47,7 @@ Three experiments worth running, which the page also lists at the bottom:
 | Kind of case | What to do | What happens |
 | --- | --- | --- |
 | Easy | Test any of the twelve photos | Confident and correct — it has seen that photo |
-| Close call | Test `perfect-2` (the palest perfect one) | Still right, but confidence drops |
+| Close call | Set char to 5%, then slide brightness to **121** | The verdict flips Perfect → Undercooked, and the scores sit at 46% vs 44% — the classifier admitting it is guessing |
 | Strange | Upload something that is not a croissant | It answers confidently anyway — see the limitation below |
 
 The whole page is one file. The twelve photos are stored inside it, so it works

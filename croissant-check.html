@@ -78,6 +78,13 @@
   details .body{padding:0 15px 16px;max-width:70ch}
   footer{border-top:var(--line);padding-top:16px;font-size:.85rem;color:var(--muted)}
   .hidden{display:none}
+  .dials{border:var(--line);background:#f8f6ef;padding:16px 18px;margin-top:20px}
+  .dial{display:block;margin:14px 0 4px;
+    font:800 .76rem ui-monospace,Menlo,monospace;text-transform:uppercase;letter-spacing:.05em}
+  .dial output{float:right;background:var(--acid);border:1px solid var(--ink);padding:1px 7px}
+  .dials input[type=range]{display:block;width:100%;margin:2px 0 6px;accent-color:var(--blue)}
+  .handset{border:var(--line);background:var(--white);padding:16px;text-align:center}
+  .handset b{display:block;font:900 2.4rem/1 ui-monospace,Menlo,monospace;letter-spacing:-.04em}
   .filelabel{display:inline-block}
   .filelabel input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 </style>
@@ -144,9 +151,10 @@
   <section class="paper">
     <p class="kicker" style="--accent:var(--burnt)"><span>Step 3</span> Test it</p>
     <h2>Try to fool it</h2>
-    <p class="lede">Pick one of the twelve, feed it a photo of your own, or press
-    the surprise button. Then check the explanation underneath — it is usually
-    more interesting than the answer.</p>
+    <p class="lede">Pick one of the twelve, feed it a photo of your own, press the
+    surprise button — or skip photos entirely and move the two dials by hand.
+    Then check the explanation underneath: it is usually more interesting than
+    the answer.</p>
     <div class="controls">
       <button class="btn" id="btn-surprise">🎲 Surprise me</button>
       <label class="btn filelabel">Use my own photo
@@ -156,6 +164,18 @@
     </div>
     <p class="muted" id="test-hint" style="font-size:.9rem">Tip: any photo works,
     not just croissants. That is the point of the last experiment below.</p>
+
+    <div class="dials" id="dials" style="display:none">
+      <h3 style="margin:0 0 4px">Or skip the photo and set the numbers yourself</h3>
+      <p class="muted" style="margin:0;font-size:.92rem">Drag a dial across a
+      boundary and watch the verdict flip. Park it right on the line to see the
+      confidence collapse.</p>
+      <label class="dial" for="sl-b">Crust brightness <output id="out-b">–</output></label>
+      <input type="range" id="sl-b" step="1">
+      <label class="dial" for="sl-c">Char <output id="out-c">–</output></label>
+      <input type="range" id="sl-c" step="0.5">
+    </div>
+
     <div id="result"></div>
   </section>
 
@@ -184,9 +204,10 @@
       <ol>
         <li><b>An easy one.</b> Feed it one of the twelve examples. It should be
         confident, because it has literally seen that photo.</li>
-        <li><b>A close call.</b> Find the perfect croissant with the darkest crust
-        and the undercooked one with the darkest crust. They sit near a boundary,
-        so confidence should drop.</li>
+        <li><b>A close call.</b> Use the dials. Slide crust brightness slowly from
+        one end to the other and watch the verdict flip. Stop right on the flip:
+        the two leading scores should be nearly equal, which is the classifier
+        admitting it is guessing.</li>
         <li><b>A strange one.</b> Upload something that is not a croissant — a dark
         jacket, a bright wall, your desk. It will still answer confidently, and
         that is the most honest thing this page does.</li>
@@ -303,6 +324,7 @@ function train(){
       `${NICE[c.label]}: brightness ${c.brightness.toFixed(0)}, char ${c.char.toFixed(1)}%</div>`
     ).join("");
   drawPlot();
+  setupDials();
   document.getElementById("btn-train").textContent = "Re-train";
 }
 
@@ -374,28 +396,42 @@ function drawPlot(){
 }
 
 /* ---------- step 3: testing ---------- */
-async function runTest(src, knownLabel){
-  if (!trained) train();
-  const img = await loadImage(src);
-  const m = measure(img);
+// keepQuip: while dragging a dial we hold the joke steady instead of
+// re-rolling it on every pixel of movement
+let heldQuip = null;
+
+function showResult(m, {src = null, knownLabel = null, keepQuip = false} = {}){
   const {best, scores} = classify(m);
   lastTest = m;
   drawPlot();
 
-  const quips = QUIP[best];
-  const quip = quips[Math.floor(Math.random()*quips.length)];
+  if (!keepQuip || !heldQuip || heldQuip.label !== best){
+    const q = QUIP[best];
+    heldQuip = {label: best, text: q[Math.floor(Math.random()*q.length)]};
+  }
+  const quip = heldQuip.text;
   const sorted = LABELS.map(l => scores.find(s => s.label === l));
+
+  const leftPane = src
+    ? `<img class="thumb" src="${src}" alt="The photo being tested">
+       <div class="measure">
+         <div>brightness<b>${m.brightness.toFixed(0)}</b></div>
+         <div>char<b>${m.char.toFixed(1)}%</b></div>
+       </div>`
+    : `<div class="handset">
+         <p class="kicker" style="margin:0 0 10px"><span>No photo</span></p>
+         <p class="muted" style="margin:0 0 12px;font-size:.9rem">You set these
+         two numbers by hand. This is the imaginary croissant they describe.</p>
+         <div class="measure" style="justify-content:center">
+           <div>brightness<b>${m.brightness.toFixed(0)}</b></div>
+           <div>char<b>${m.char.toFixed(1)}%</b></div>
+         </div>
+       </div>`;
 
   document.getElementById("result").innerHTML = `
     <div class="result">
       <div class="grid2">
-        <div>
-          <img class="thumb" src="${src}" alt="The photo being tested">
-          <div class="measure">
-            <div>brightness<b>${m.brightness.toFixed(0)}</b></div>
-            <div>char<b>${m.char.toFixed(1)}%</b></div>
-          </div>
-        </div>
+        <div>${leftPane}</div>
         <div>
           <p class="kicker" style="--accent:${COLOR[best]}"><span>Verdict</span></p>
           <div class="verdict">${NICE[best]}</div>
@@ -413,8 +449,52 @@ async function runTest(src, knownLabel){
         </div>
       </div>
     </div>`;
+}
+
+async function runTest(src, knownLabel){
+  if (!trained) train();
+  const img = await loadImage(src);
+  const m = measure(img);
+  showResult(m, {src, knownLabel});
+  syncDialsTo(m);
   document.getElementById("result").scrollIntoView({behavior:"smooth", block:"nearest"});
 }
+
+/* ---------- the dials: change an input by hand ---------- */
+const slB = document.getElementById("sl-b"), slC = document.getElementById("sl-c");
+const outB = document.getElementById("out-b"), outC = document.getElementById("out-c");
+
+function setupDials(){
+  const r = trained.range;
+  slB.min = Math.floor(r.bMin); slB.max = Math.ceil(r.bMax);
+  slC.min = Math.max(0, Math.floor(r.cMin)); slC.max = Math.ceil(r.cMax);
+  if (slB.value === "" || +slB.value < +slB.min || +slB.value > +slB.max){
+    slB.value = Math.round((+slB.min + +slB.max)/2);
+    slC.value = Math.round((+slC.min + +slC.max)/2);
+  }
+  // show the dials, but do not force a verdict on screen until one is moved
+  outB.textContent = slB.value;
+  outC.textContent = (+slC.value).toFixed(1) + "%";
+  document.getElementById("dials").style.display = "";
+}
+
+function readDials(keepQuip = true){
+  const m = {brightness: +slB.value, char: +slC.value};
+  outB.textContent = m.brightness;
+  outC.textContent = m.char.toFixed(1) + "%";
+  showResult(m, {keepQuip});
+}
+
+function syncDialsTo(m){
+  if (!trained) return;
+  slB.value = Math.min(Math.max(m.brightness, +slB.min), +slB.max);
+  slC.value = Math.min(Math.max(m.char, +slC.min), +slC.max);
+  outB.textContent = Math.round(m.brightness);
+  outC.textContent = m.char.toFixed(1) + "%";
+}
+
+slB.addEventListener("input", () => readDials());
+slC.addEventListener("input", () => readDials());
 
 /* ---------- wiring ---------- */
 document.getElementById("btn-train").addEventListener("click", train);
@@ -440,9 +520,10 @@ document.getElementById("btn-clear").addEventListener("click", () => {
 });
 
 document.getElementById("btn-reset").addEventListener("click", () => {
-  trained = null; lastTest = null;
+  trained = null; lastTest = null; heldQuip = null;
   document.getElementById("result").innerHTML = "";
   document.getElementById("train-out").style.display = "none";
+  document.getElementById("dials").style.display = "none";
   document.getElementById("btn-train").textContent = "Train the classifier";
   window.scrollTo({top:0, behavior:"smooth"});
 });
