@@ -66,7 +66,7 @@ Three experiments worth running, which the page also lists at the bottom:
 | Kind of case | What to do | What happens |
 | --- | --- | --- |
 | Teach it wrong | Label the twelve **backwards** — pale ones Burnt, dark ones Under — then re-train | It cheerfully agrees with you. A charred croissant now reads *Undercooked* |
-| Close call | Set char to 5%, then slide crust warmth slowly | The verdict flips Undercooked → Perfect around warmth **2.05**. Stop on the flip and the top two scores nearly tie — the classifier admitting it is guessing |
+| Close call | Set char to 5% and brightness to 104, then slide crust warmth slowly | The verdict flips Undercooked → Perfect at warmth **1.815**, where the scores read 41% / 41% and the page says "too close to call" |
 | Strange | Upload something that is not a croissant | It answers confidently anyway — see the limitation below |
 
 The whole page is one file. The twelve photos are stored inside it, so it works
@@ -178,6 +178,68 @@ The page now warns you when a photo's numbers land far outside the twelve it was
 trained on, but it still has no way to say "I don't know" outright — it always
 commits to one of the labels.
 
+## Testing it (Stop 5)
+
+All three cases were run in the page itself, labelling the twelve my way first.
+
+### 1. Easy case
+
+- **Input:** `perfect-3.jpg`, one of the twelve — warmth 2.29, char 13.0%, brightness 101
+- **Prediction:** **Perfect**, 81% (undercooked 10%, burnt 8%)
+- **What I noticed:** This is the highest confidence the page ever shows, and it
+  should be — the photo is one of the four that *defined* what "perfect" means,
+  so it sits almost exactly on top of its own group's centre. Scoring well here
+  proves very little.
+
+### 2. Close case
+
+- **Input:** no photo — the dials set to char 5%, brightness 104, and crust
+  warmth walked slowly upward
+- **Prediction:** flips **Undercooked → Perfect** at warmth **1.815**. At the flip
+  the scores are undercooked 41% / perfect 41% / burnt 18%
+- **What I noticed:** A gap of essentially zero between the top two, from moving
+  one dial by 0.005. The verdict is printed just as large and just as confidently
+  as the 81% case above, which is exactly the wrong impression — so I added a
+  "too close to call" note that appears whenever the top two are within 3 points.
+
+### 3. Strange case
+
+- **Input:** a plain grey rectangle, no croissant anywhere — warmth 0.99,
+  char 0%, brightness 107
+- **Prediction:** **Undercooked**, and originally with no warning at all
+- **What I noticed:** The page has no concept of "that is not a croissant." A
+  red-brick colour came back **Perfect** for the same reason. The old warning
+  only measured distance to the nearest group, and these landed inside it. So I
+  added a check on whether each number is outside the range of everything
+  labeled. Grey now says *"its warmth is 0.99, below anything you labeled
+  (1.54 to 2.68)"*.
+
+I checked the new warning does not cry wolf: **0 false alarms** across the twelve
+training photos, and holding each photo out never puts it more than 0.32 outside
+the range, while the nearest non-croissant was 0.48 out.
+
+**What still gets through:** a flat green-leaf colour is called *Undercooked*
+with no warning, because its three numbers genuinely do land inside the range of
+a pale croissant. No threshold fixes that — the page only ever sees three colour
+statistics, so anything that shares them is, to this classifier, a croissant.
+
+### Showing it to a classmate
+
+_Still to do — this part is mine, not the AI's._ Show the page without
+explaining it, then record their answers:
+
+- What do you think you can change?
+- What do you think the classifier is doing?
+- What is confusing?
+
+| Question | What they said |
+| --- | --- |
+| What can you change? | |
+| What is it doing? | |
+| What is confusing? | |
+
+**The improvement I made after their feedback:**
+
 ## Development log
 
 Moments where I directed the work, in order:
@@ -207,7 +269,11 @@ Moments where I directed the work, in order:
 6. I noticed the twelve photos were shown grouped — four undercooked, then four
    perfect, then four burnt — which handed the visitor the answer. They are now
    shuffled on every load.
-7. _(add your own here as you keep working)_
+7. I tested the page instead of just looking at it, and two things turned up
+   that I had not thought about. A grey rectangle was confidently called a
+   croissant, and a verdict sitting exactly on a boundary was displayed just as
+   loudly as a confident one. Both are now flagged in the page itself.
+8. _(add your own here as you keep working)_
 
 ## Reflection
 
