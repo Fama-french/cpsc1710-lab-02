@@ -214,6 +214,12 @@
         <b>Drop a croissant photo here</b>
         <span class="muted">or click to choose a file · nothing is uploaded anywhere</span>
       </div>
+      <p class="muted" style="font-size:.92rem;margin:12px 0 0">
+        Fair warning: it will judge <i>anything</i> and sound certain about it.
+        The first person to try this page uploaded a selfie and was told he was a
+        perfect croissant. That is not a joke at his expense — skin and croissant
+        crust are both golden-brown, so his face measured well inside the range of
+        the twelve photos and nothing looked out of place to the classifier.</p>
       <input type="file" id="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0">
       <div class="controls">
         <button class="btn" id="btn-surprise">🎲 Use one of the twelve</button>
@@ -280,8 +286,14 @@
         watch the verdict flip. Stop right on the flip: the top two scores should
         be nearly equal, which is the classifier admitting it is guessing.</li>
         <li><b>A strange one.</b> Upload something that is not a croissant — a dark
-        jacket, a bright wall, your desk. It still answers, but if the numbers land
-        far outside your twelve photos it now warns you not to trust the answer.</li>
+        jacket, a bright wall, your desk. It still answers, and if the numbers land
+        far outside your twelve photos it warns you not to trust the answer.</li>
+        <li><b>The one that gets past the warning.</b> Upload a photo of a face, or
+        anything tan: cardboard, a wooden table, a paper bag. These get judged with
+        no warning at all, because golden-brown skin and golden-brown crust produce
+        genuinely similar numbers. The warning can only catch photos whose numbers
+        are <i>unusual</i> — not photos that are unusual for reasons the classifier
+        cannot see.</li>
       </ol>
     </div>
   </details>
