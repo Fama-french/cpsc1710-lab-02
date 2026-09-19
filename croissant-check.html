@@ -452,6 +452,18 @@ function train(){
   // it at the average brightness of the twelve photos
   trained.meanBright = measured.reduce((a,p) => a + p.brightness, 0)/measured.length;
 
+  // the box of numbers actually seen while training. Testing showed that a
+  // plain grey rectangle and a photo of brick both landed inside the old
+  // distance-based check, so we also test whether each number is simply
+  // outside the range of everything labeled. Holding out a real photo never
+  // puts it more than 0.32 outside, and the nearest non-croissant tried was
+  // 0.48 out, so 0.4 separates them.
+  trained.box = {};
+  ["warmth","char","brightness"].forEach(k => {
+    const v = measured.map(p => p[k]);
+    trained.box[k] = [Math.min(...v), Math.max(...v)];
+  });
+
   document.getElementById("train-out").style.display = "";
   document.getElementById("legend").innerHTML = used.map(l =>
     `<span><i class="swatch" style="background:${COLOR[l]}"></i>${NICE[l]}</span>`).join("");
@@ -491,10 +503,24 @@ function classify(m){
     ({label: c.label, d: dist(v, norm(c, r))})).sort((a,b) => a.d - b.d);
   const inv = ds.map(o => 1/Math.max(o.d, 1e-6));
   const tot = inv.reduce((a,b) => a+b, 0);
-  return { best: ds[0].label,
-           scores: ds.map((o,i) => ({label:o.label, share: inv[i]/tot})),
-           // sits far outside the cloud of training photos
-           outlier: ds[0].d > trained.spread * 2.2 };
+  const scores = ds.map((o,i) => ({label:o.label, share: inv[i]/tot}));
+
+  // which measurements fall outside everything that was labeled, and by how far
+  const NAME = {warmth:"warmth", char:"char", brightness:"brightness"};
+  const FMT  = {warmth:v=>v.toFixed(2), char:v=>v.toFixed(0)+"%", brightness:v=>v.toFixed(0)};
+  const off = [];
+  for (const k of ["warmth","char","brightness"]){
+    const [lo, hi] = trained.box[k], w = (hi - lo) || 1;
+    const over = Math.max((lo - m[k])/w, (m[k] - hi)/w, 0);
+    if (over > 0.4) off.push({k, how: m[k] < lo ? "below" : "above",
+                              val: FMT[k](m[k]), lo: FMT[k](lo), hi: FMT[k](hi),
+                              name: NAME[k], over});
+  }
+  off.sort((a,b) => b.over - a.over);
+
+  return { best: ds[0].label, scores, off,
+           outlier: off.length > 0 || ds[0].d > trained.spread * 2.2,
+           tooClose: scores.length > 1 && (scores[0].share - scores[1].share) < 0.03 };
 }
 
 /* ---------- the chart ---------- */
@@ -567,7 +593,7 @@ function unlockTesting(){
 }
 
 function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
-  const {best, scores, outlier} = classify(m);
+  const {best, scores, outlier, off, tooClose} = classify(m);
   lastTest = m;
   drawPlot();
 
@@ -598,10 +624,16 @@ function showResult(m, {src = null, mine = null, keepQuip = false} = {}){
           <p class="kicker" style="--accent:${COLOR[best]}"><span>Verdict</span></p>
           <div class="verdict">${NICE[best]}</div>
           <p class="quip">${heldQuip.text}</p>
-          ${outlier ? `<p class="warnbox">⚠️ <b>But do not trust this one.</b>
-            These numbers sit well outside every photo you labeled, so the
-            classifier is extrapolating into territory it has never seen. Look at
-            how close the three scores are below — that near-tie is it shrugging.</p>` : ""}
+          ${outlier ? `<p class="warnbox">⚠️ <b>Do not trust this one.</b>
+            ${off.length
+              ? `Its <b>${off[0].name}</b> is ${off[0].val}, which is ${off[0].how}
+                 anything you labeled (${off[0].lo} to ${off[0].hi}).`
+              : `These numbers sit well outside the cloud of photos you labeled.`}
+            The classifier is extrapolating into territory it has never seen, so
+            it is guessing rather than recognising.</p>` : ""}
+          ${tooClose ? `<p class="warnbox">🤷 <b>Too close to call.</b> The top two
+            labels are within a hair of each other, so this sits right on a
+            boundary. Nudge a dial either way and the verdict flips.</p>` : ""}
           ${ordered.map(s => `
             <div class="scorerow"><span>${NICE[s.label]}</span><span>${(s.share*100).toFixed(0)}%</span></div>
             <div class="bar"><i style="width:${(s.share*100).toFixed(0)}%;background:${COLOR[s.label]}"></i></div>
